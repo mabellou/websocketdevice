@@ -1,27 +1,48 @@
-var http = require('http');
-var fs = require('fs');
-
-// Chargement du fichier index.html affiché au client
-var server = http.createServer(function(req, res) {
-    fs.readFile('./index.html', 'utf-8', function(error, content) {
-        res.writeHead(200, {"Content-Type": "text/html"});
-        res.end(content);
-    });
+var express = require('express');
+var bodyParser = require('body-parser');
+var path = require('path');
+ 
+var app = express();
+ 
+var server = app.listen(process.env.PORT || 8001, function() {
+  console.log('listening on *:', process.env.PORT || 8001);
 });
 
-// Chargement de socket.io
-var io = require('socket.io').listen(server);
+var io = require('socket.io')(server);
+ 
+app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.json());
+app.use('/socket.io', express.static('socket.io'));
+ 
+ app.use(function(req, res, next) {
+	res.setHeader("Access-Control-Allow-Origin", "*");
+	res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT");
+    res.setHeader("Access-Control-Allow-Headers", "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers");
+	return next();
+});
 
-// Quand un client se connecte, on le note dans la console
-io.sockets.on('connection', function (socket) {
-    socket.emit('message', 'Vous êtes bien connecté !');
-
-    // Quand le serveur reçoit un signal de type "message" du client    
-    socket.on('message', function (message) {
-        console.log('Un client me parle ! Il me dit : ' + message);
-        socket.emit('message', "salut");
-    });	
+// Set socket.io listeners.
+io.on('connection', (socket) => {
+  console.log('a user connected');
+  socket.emit('scanevent', "<b>Connected</b>");
+ 
+  socket.on('disconnect', () => {
+    console.log('user disconnected');
+  });
+});
+ 
+// Set Express routes.
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname + '/index.html'));
+});
+ 
+app.post('/scanevent', function(req, res) {
+  var message = req.body.message;
+  io.emit('scanevent', message);
+ 
+  console.log("Scanevent message -> ", message);
+  res.send('Event received');
 });
 
 
-server.listen(process.env.PORT || 8001);
