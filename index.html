@@ -14,9 +14,10 @@
             <li><b>Topics</b></li> 
         </ul>
 
-        <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+        <script src="https://code.jquery.com/jquery-1.10.1.min.js"></script>
         <script src="/socket.io/socket.io.js"></script>
         <script>
+            //var socket = io.connect('http://localhost:8001');
             var socket = io.connect('https://websocketdevice.herokuapp.com/');
             socket.on('message', function(message) {
                 var li = document.createElement("li");
